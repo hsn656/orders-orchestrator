@@ -150,9 +150,11 @@ export class ShopifyEventsProcessor extends WorkerHost {
             },
             entityManager,
           );
-        } else if (event.payload.date < order.businessUpdatedAt) {
+        } else if (
+          new Date(event.payload.date) < new Date(order.businessUpdatedAt)
+        ) {
           this.logger.warn(
-            `duplicate order update event received for order ${event.refId}, skipping update`,
+            `duplicate order update event received for order ${event.id}, skipping update`,
           );
         } else {
           Object.assign(order, {
