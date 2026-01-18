@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:4000/webhooks/shopify';
-const ORDER_ID = 111111111;
+const ORDER_ID = 32132141;
 
 const getRandomDate = (date: Date) =>
   new Date(date.getTime() + Math.floor(Math.random() * 1000)).toISOString();
@@ -75,6 +75,7 @@ async function main() {
     if (r < 0.25) {
       events.push({ payload: makeEvent('paid'), topic: 'orders/updated' });
     }
+    // TODO: comment or uncomment this to test cancel event
     // else if (r < 0.5) {
     //   events.push({ payload: makeEvent('cancel'), topic: 'orders/updated' });
     // }
