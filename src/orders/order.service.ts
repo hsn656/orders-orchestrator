@@ -15,6 +15,13 @@ export class OrderService {
     [ShippingStatus.SHIPPED]: 2,
     [ShippingStatus.DELIVERED]: 3,
   };
+
+  private readonly paymentStatusRank: Record<PaymentStatus, number> = {
+    [PaymentStatus.PENDING]: 0,
+    [PaymentStatus.PAID]: 1,
+    [PaymentStatus.CANCELLED]: 2,
+  };
+
   constructor(private readonly orderRepository: OrderRepository) {}
 
   async createOrder(
@@ -91,6 +98,13 @@ export class OrderService {
     return (
       event.payload.financialStatus === PaymentStatus.CANCELLED &&
       order.paymentStatus !== PaymentStatus.CANCELLED
+    );
+  }
+
+  isValidPaymentStatusTransition(order: OrderEntity, status: PaymentStatus) {
+    return (
+      this.paymentStatusRank[order.paymentStatus] <=
+      this.paymentStatusRank[status]
     );
   }
 }

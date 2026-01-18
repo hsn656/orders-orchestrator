@@ -87,9 +87,9 @@ export class ShopifyEventsProcessor extends WorkerHost {
             `duplicate order creation event received for order ${event.refId}, skipping update`,
           );
         } else {
-          // in case update event came first, we need to make sure no data is lost
           Object.assign(order, {
             placeholder: false,
+            // in case update event came first, we need to make sure no data is lost
             ...(!order.customer && event.payload.customer
               ? { customer: event.payload.customer }
               : {}),
@@ -127,6 +127,7 @@ export class ShopifyEventsProcessor extends WorkerHost {
   async processOrderUpdated(event: EventStoreEntity): Promise<void> {
     await this.entityManager.transaction(async (entityManager) => {
       try {
+        await this.eventStoreService.markAsProcessed(event, entityManager);
         let order = await this.orderService.findByRefIdForUpdate(
           event.refId,
           OrderSource.SHOPIFY,
@@ -156,13 +157,24 @@ export class ShopifyEventsProcessor extends WorkerHost {
           new Date(event.payload.date) < new Date(order.businessUpdatedAt)
         ) {
           this.logger.warn(
-            `old order update event received for order ${event.id}, skipping update`,
+            `old order update event received for order ${event.refId}, skipping update`,
           );
+        } else if (
+          !this.orderService.isValidPaymentStatusTransition(
+            order,
+            event.payload.financialStatus,
+          )
+        ) {
+          this.logger.warn(
+            `Invalid payment status transition from ${order.paymentStatus} to ${event.payload.financialStatus}, skipping update`,
+          );
+          return;
         } else {
           const isOrderCancelled = this.orderService.isOrderCancelled(
             event,
             order,
           );
+
           Object.assign(order, {
             paymentStatus: event.payload.financialStatus,
             businessUpdatedAt: event.payload.date,
@@ -185,8 +197,6 @@ export class ShopifyEventsProcessor extends WorkerHost {
             await this.notifyOrderPaymentCancelled(order);
           }
         }
-
-        await this.eventStoreService.markAsProcessed(event, entityManager);
 
         if (this.orderService.isReadyForBooking(order)) {
           await this.publishInternalBookingEvent(order, entityManager);
