@@ -156,7 +156,7 @@ export class ShopifyEventsProcessor extends WorkerHost {
           new Date(event.payload.date) < new Date(order.businessUpdatedAt)
         ) {
           this.logger.warn(
-            `duplicate order update event received for order ${event.id}, skipping update`,
+            `old order update event received for order ${event.id}, skipping update`,
           );
         } else {
           const isOrderCancelled = this.orderService.isOrderCancelled(
