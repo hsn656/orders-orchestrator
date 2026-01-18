@@ -247,6 +247,12 @@ export class ShopifyEventsProcessor extends WorkerHost {
   }
 
   async notifyOrderPaymentCancelled(order: OrderEntity): Promise<void> {
+    if (order.shippingStatus === ShippingStatus.PENDING) {
+      this.logger.warn(
+        `Order ${order.id} has pending shipping status, skipping order payment cancelled notification`,
+      );
+      return;
+    }
     await this.courierServiceCommunicator.notifyOrderPaymentCancelled(order);
   }
 }

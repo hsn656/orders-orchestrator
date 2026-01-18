@@ -76,10 +76,9 @@ async function main() {
       events.push({ payload: makeEvent('paid'), topic: 'orders/updated' });
     }
     // TODO: comment or uncomment this to test cancel event
-    // else if (r < 0.5) {
-    //   events.push({ payload: makeEvent('cancel'), topic: 'orders/updated' });
-    // }
-    else {
+    else if (r < 0.5) {
+      events.push({ payload: makeEvent('cancel'), topic: 'orders/updated' });
+    } else {
       events.push({ payload: makeEvent('pending'), topic: 'orders/updated' });
     }
 
