@@ -13,6 +13,7 @@ import { InternalBookingEvent } from 'src/shared/enums/internal-booking-event.en
 import { OrderEntity } from 'src/orders/order.entity';
 import { ShippingStatus } from 'src/shared/enums/shipping-status.enum';
 import { PaymentStatus } from 'src/shared/enums/payment-status.enum';
+import { CourierServiceCommunicator } from 'src/shared/communicators/courier-service.communicator';
 
 @Processor(ProcessorQueue.SHOPIFY_EVENTS)
 export class ShopifyEventsProcessor extends WorkerHost {
@@ -24,6 +25,7 @@ export class ShopifyEventsProcessor extends WorkerHost {
     private readonly orderService: OrderService,
     @InjectQueue(ProcessorQueue.INTERNAL_BOOKING_EVENTS)
     private readonly internalBookingEventsQueue: Queue,
+    private readonly courierServiceCommunicator: CourierServiceCommunicator,
   ) {
     super();
   }
@@ -157,6 +159,10 @@ export class ShopifyEventsProcessor extends WorkerHost {
             `duplicate order update event received for order ${event.id}, skipping update`,
           );
         } else {
+          const isOrderCancelled = this.orderService.isOrderCancelled(
+            event,
+            order,
+          );
           Object.assign(order, {
             paymentStatus: event.payload.financialStatus,
             businessUpdatedAt: event.payload.date,
@@ -174,6 +180,10 @@ export class ShopifyEventsProcessor extends WorkerHost {
             order,
             entityManager,
           );
+
+          if (isOrderCancelled) {
+            await this.notifyOrderPaymentCancelled(order);
+          }
         }
 
         await this.eventStoreService.markAsProcessed(event, entityManager);
@@ -234,5 +244,9 @@ export class ShopifyEventsProcessor extends WorkerHost {
     this.logger.log(
       `Published internal booking event for order ${order.id}, eventStoreId=${bookingEvent.id}`,
     );
+  }
+
+  async notifyOrderPaymentCancelled(order: OrderEntity): Promise<void> {
+    await this.courierServiceCommunicator.notifyOrderPaymentCancelled(order);
   }
 }

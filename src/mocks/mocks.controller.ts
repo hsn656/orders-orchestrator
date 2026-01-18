@@ -15,4 +15,11 @@ export class MocksController {
       message: 'Shopify order updated',
     };
   }
+
+  @Post('notify-order-payment-cancelled')
+  notifyOrderPaymentCancelled() {
+    return {
+      message: 'Order payment cancelled',
+    };
+  }
 }

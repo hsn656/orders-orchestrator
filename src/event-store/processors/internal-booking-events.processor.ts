@@ -8,6 +8,7 @@ import { EventStoreService } from 'src/event-store/event-store.service';
 import { OrderService } from 'src/orders/order.service';
 import { ProcessorQueue } from 'src/event-store/enums/processer-queue.enum';
 import { CourierServiceCommunicator } from 'src/shared/communicators/courier-service.communicator';
+import { PaymentStatus } from 'src/shared/enums/payment-status.enum';
 
 @Processor(ProcessorQueue.INTERNAL_BOOKING_EVENTS)
 export class InternalBookingEventsProcessor extends WorkerHost {
@@ -48,6 +49,13 @@ export class InternalBookingEventsProcessor extends WorkerHost {
         if (!order) {
           this.logger.warn(
             `Order not found for id ${event.orderId}, skipping internal booking event`,
+          );
+          return;
+        }
+
+        if (order.paymentStatus !== PaymentStatus.PAID) {
+          this.logger.warn(
+            `Order ${order.id} has ${order.paymentStatus} payment, skipping internal booking event`,
           );
           return;
         }

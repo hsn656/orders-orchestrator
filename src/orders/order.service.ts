@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { OrderEntity } from './order.entity';
 import { OrderRepository } from './order.repository';
 import { EntityManager } from 'typeorm';
 import { OrderSource } from 'src/shared/enums/order-source.enum';
 import { PaymentStatus } from 'src/shared/enums/payment-status.enum';
 import { ShippingStatus } from 'src/shared/enums/shipping-status.enum';
+import { EventStoreEntity } from 'src/event-store/event-store.entity';
 
 @Injectable()
 export class OrderService {
@@ -83,6 +84,13 @@ export class OrderService {
     return (
       this.shippingStatusRank[order.shippingStatus] <
       this.shippingStatusRank[status]
+    );
+  }
+
+  isOrderCancelled(event: EventStoreEntity, order: OrderEntity) {
+    return (
+      event.payload.financialStatus === PaymentStatus.CANCELLED &&
+      order.paymentStatus !== PaymentStatus.CANCELLED
     );
   }
 }

@@ -29,4 +29,25 @@ export class CourierServiceCommunicator {
       ),
     );
   }
+
+  notifyOrderPaymentCancelled(order: OrderEntity) {
+    const url = `${this.courierServiceUrl}/notify-order-payment-cancelled`;
+    this.logger.log(`Notifying order payment cancelled for order ${order.id}`);
+    return firstValueFrom(
+      this.httpService.post(url, order).pipe(
+        map((res) => {
+          this.logger.log(
+            `Order payment cancelled notified for order ${order.id}`,
+          );
+          return res.data;
+        }),
+        catchError((error) => {
+          this.logger.error(
+            `Error notifying order payment cancelled: ${error}`,
+          );
+          throw error;
+        }),
+      ),
+    );
+  }
 }
